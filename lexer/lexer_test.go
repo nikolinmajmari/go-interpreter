@@ -20,6 +20,9 @@ func TestNextToken(t *testing.T) {
 	}else{
 		return true;
 	}
+
+	a==b
+	2!=3
 `
 
 	tests := []struct {
@@ -90,7 +93,14 @@ func TestNextToken(t *testing.T) {
 		{token.TRUE, "true"},
 		{token.SEMICOLON, ";"},
 		{token.RBRACKET, "}"},
+		{token.IDENT, "a"},
+		{token.EQ, "=="},
+		{token.IDENT, "b"},
+		{token.INT, "2"},
+		{token.NEQ, "!="},
+		{token.INT, "3"},
 	}
+
 	l := New(input)
 	for i, tt := range tests {
 		tok := l.NextToken()
