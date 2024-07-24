@@ -14,6 +14,12 @@ func TestNextToken(t *testing.T) {
 	let result = sum(a,b);
 	!-/*10;
 	5 < 10 > 5;
+	
+	if(result < 10){
+		return false;
+	}else{
+		return true;
+	}
 `
 
 	tests := []struct {
@@ -67,8 +73,24 @@ func TestNextToken(t *testing.T) {
 		{token.GT, ">"},
 		{token.INT, "5"},
 		{token.SEMICOLON, ";"},
+		{token.IF, "if"},
+		{token.LPAREN, "("},
+		{token.IDENT, "result"},
+		{token.LT, "<"},
+		{token.INT, "10"},
+		{token.RPAREN, ")"},
+		{token.LBRACKET, "{"},
+		{token.RETURN, "return"},
+		{token.FALSE, "false"},
+		{token.SEMICOLON, ";"},
+		{token.RBRACKET, "}"},
+		{token.ELSE, "else"},
+		{token.LBRACKET, "{"},
+		{token.RETURN, "return"},
+		{token.TRUE, "true"},
+		{token.SEMICOLON, ";"},
+		{token.RBRACKET, "}"},
 	}
-
 	l := New(input)
 	for i, tt := range tests {
 		tok := l.NextToken()
