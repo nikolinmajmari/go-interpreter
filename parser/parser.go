@@ -7,6 +7,17 @@ import (
 	"interpreter/token"
 )
 
+const (
+	_ int = iota
+	LOWEST
+	EQUALS
+	LGT
+	SUM
+	PRODUCT
+	PREFIX
+	CALL
+)
+
 type Parser struct {
 	l *lexer.Lexer
 
@@ -15,13 +26,28 @@ type Parser struct {
 
 	/// errors
 	errors []string
+
+	/// parser fns
+	prefixParseFns map[token.Type]prefixParseFn
+	infixParseFns  map[token.Type]infixParseFn
 }
 
 func New(l *lexer.Lexer) *Parser {
 	p := &Parser{l: l, errors: []string{}}
+
+	p.prefixParseFns = make(map[token.Type]prefixParseFn)
+	p.registerPrefix(token.IDENT, p.parseIdentifier)
+
 	p.NextToken()
 	p.NextToken()
 	return p
+}
+
+func (p *Parser) registerPrefix(t token.Type, fn prefixParseFn) {
+	p.prefixParseFns[t] = fn
+}
+func (p *Parser) registerInfix(t token.Type, fn infixParseFn) {
+	p.infixParseFns[t] = fn
 }
 
 func (p *Parser) Errors() []string {
@@ -59,7 +85,7 @@ func (p *Parser) ParseStatement() ast.Statement {
 	case token.RETURN:
 		return p.ParseReturnStatement()
 	default:
-		return nil
+		return p.ParseExpressionStatement()
 	}
 }
 
@@ -91,6 +117,31 @@ func (p *Parser) ParseReturnStatement() ast.Statement {
 	return stm
 }
 
+// ParseExpressionStatement / expressions
+func (p *Parser) ParseExpressionStatement() *ast.ExpressionStatement {
+	stmt := &ast.ExpressionStatement{Token: p.currToken}
+	stmt.Expression = p.ParseExpression(LOWEST)
+	if p.peekTokenIs(token.SEMICOLON) {
+		p.NextToken()
+	}
+	return stmt
+}
+
+func (p *Parser) ParseExpression(precedence int) ast.Expression {
+	prefix := p.prefixParseFns[p.currToken.Type]
+	if prefix == nil {
+		return nil
+	}
+	leftExp := prefix()
+	return leftExp
+}
+
+func (p *Parser) parseIdentifier() ast.Expression {
+	return &ast.Identifier{
+		Token: p.currToken, Value: p.currToken.Literal,
+	}
+}
+
 // / helpers
 func (p *Parser) currentTokenIs(t token.Type) bool {
 	return p.currToken.Type == t
@@ -106,3 +157,9 @@ func (p *Parser) expectPeek(t token.Type) bool {
 	p.PeekError(t)
 	return false
 }
+
+// / parsing functions
+type (
+	prefixParseFn func() ast.Expression
+	infixParseFn  func(expression ast.Expression) ast.Expression
+)

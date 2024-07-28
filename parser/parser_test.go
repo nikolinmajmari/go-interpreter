@@ -64,6 +64,33 @@ func TestReturnStatements(t *testing.T) {
 	}
 }
 
+func TestIdentifier(t *testing.T) {
+	input := "a;"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+	if len(program.Statements) != 1 {
+		t.Fatalf("program has not enough statments, 1 expected got=%d", len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("program.Statement[0] is not an ast.ExpressionStatement, got=%T", program.Statements[0])
+	}
+
+	ident, ok := stmt.Expression.(*ast.Identifier)
+	if !ok {
+		t.Fatalf("expected *ast.Identifier. got %T", program.Statements[0])
+	}
+	if ident.Value != "a" {
+		t.Errorf("ident.Value expected %q got=%q", "a", ident.Value)
+	}
+	if ident.TokenLiteral() != "a" {
+		t.Errorf("ident.TokenLiteral expected 'a' instead got %q", ident.TokenLiteral())
+	}
+}
+
 func checkParserErrors(t *testing.T, p *Parser) {
 	errors := p.Errors()
 	if len(errors) == 0 {
