@@ -56,11 +56,14 @@ func (p *Parser) ParseStatement() ast.Statement {
 	switch p.currToken.Type {
 	case token.LET:
 		return p.ParseLetStatement()
+	case token.RETURN:
+		return p.ParseReturnStatement()
 	default:
 		return nil
 	}
 }
 
+// ParseLetStatement / statement parser
 func (p *Parser) ParseLetStatement() *ast.LetStatement {
 	stm := &ast.LetStatement{Token: p.currToken}
 	if !p.expectPeek(token.IDENT) {
@@ -78,13 +81,23 @@ func (p *Parser) ParseLetStatement() *ast.LetStatement {
 	return stm
 }
 
+func (p *Parser) ParseReturnStatement() ast.Statement {
+	stm := &ast.ReturnStatement{Token: p.currToken}
+	p.NextToken()
+	/// skip expression
+	for !p.currentTokenIs(token.SEMICOLON) {
+		p.NextToken()
+	}
+	return stm
+}
+
+// / helpers
 func (p *Parser) currentTokenIs(t token.Type) bool {
 	return p.currToken.Type == t
 }
 func (p *Parser) peekTokenIs(t token.Type) bool {
 	return p.peekToken.Type == t
 }
-
 func (p *Parser) expectPeek(t token.Type) bool {
 	if p.peekTokenIs(t) {
 		p.NextToken()
