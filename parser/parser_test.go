@@ -1,0 +1,71 @@
+package parser
+
+import (
+	"interpreter/ast"
+	"interpreter/lexer"
+	"testing"
+)
+
+func TestLetStatements(t *testing.T) {
+	input := `
+		let a = 0;
+		let b = 1;
+		let c = 2;
+`
+	l := lexer.New(input)
+	p := New(l)
+
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+	if program == nil {
+		t.Fatal("ParseProgram returned nil !")
+	}
+	if len(program.Statements) != 3 {
+		t.Fatalf("Expected 3 statements, ParseProgram() returned  %d! ", len(program.Statements))
+	}
+
+	tests := []struct {
+		expectedIdentifier string
+	}{
+		{"a"}, {"b"}, {"c"},
+	}
+	for i, tt := range tests {
+		stm := program.Statements[i]
+		if !testLetStatement(t, stm, tt.expectedIdentifier) {
+			return
+		}
+	}
+}
+
+func checkParserErrors(t *testing.T, p *Parser) {
+	errors := p.Errors()
+	if len(errors) == 0 {
+		return
+	}
+	t.Errorf("Parser has %d errors:", len(errors))
+	for _, msg := range errors {
+		t.Errorf("Parser error : %q", msg)
+	}
+	t.FailNow()
+}
+
+func testLetStatement(t *testing.T, stm ast.Statement, name string) bool {
+	if stm.TokenLiteral() != "let" {
+		t.Errorf("Expected let token literal got %s", stm.TokenLiteral())
+		return false
+	}
+	letStm, ok := stm.(*ast.LetStatement)
+	if !ok {
+		t.Errorf("Expected let statement, got %T", stm)
+		return false
+	}
+	if letStm.Name.Value != name {
+		t.Errorf("LetStatement.Name.Value expects %s, got %s", name, letStm.Name.Value)
+		return false
+	}
+	if letStm.Name.TokenLiteral() != name {
+		t.Errorf("LetStatement.Name.TokenLiteral expects %s got %s", name, letStm.Name.TokenLiteral())
+		return false
+	}
+	return true
+}
