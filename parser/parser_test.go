@@ -64,7 +64,7 @@ func TestReturnStatements(t *testing.T) {
 	}
 }
 
-func TestIdentifier(t *testing.T) {
+func TestIdentifierLiteral(t *testing.T) {
 	input := "a;"
 	l := lexer.New(input)
 	p := New(l)
@@ -81,7 +81,7 @@ func TestIdentifier(t *testing.T) {
 
 	ident, ok := stmt.Expression.(*ast.Identifier)
 	if !ok {
-		t.Fatalf("expected *ast.Identifier. got %T", program.Statements[0])
+		t.Fatalf("expected *ast.Identifier. got %T", stmt.Expression)
 	}
 	if ident.Value != "a" {
 		t.Errorf("ident.Value expected %q got=%q", "a", ident.Value)
@@ -89,6 +89,32 @@ func TestIdentifier(t *testing.T) {
 	if ident.TokenLiteral() != "a" {
 		t.Errorf("ident.TokenLiteral expected 'a' instead got %q", ident.TokenLiteral())
 	}
+}
+func TestIntegerLiteral(t *testing.T) {
+	input := "1;"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+	if len(program.Statements) != 1 {
+		t.Errorf("Expected 1 statement got %d", len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("program.Statement[0] is not an ast.ExpressionStateent, got %T", stmt)
+	}
+	literal, ok := stmt.Expression.(*ast.IntegerLiteral)
+	if !ok {
+		t.Fatalf("expected *ast.IntegerLiteral got %T", stmt.Expression)
+	}
+	if literal.Value != 1 {
+		t.Errorf("Expected literal value 1 got %d", literal.Value)
+	}
+	if literal.TokenLiteral() != "1" {
+		t.Errorf("Expected token literal of 1 got %q", literal.TokenLiteral())
+	}
+
 }
 
 func checkParserErrors(t *testing.T, p *Parser) {
