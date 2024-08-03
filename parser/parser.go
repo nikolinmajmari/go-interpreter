@@ -76,6 +76,7 @@ func New(l *lexer.Lexer) *Parser {
 	// prefix expressions
 	p.registerPrefix(token.BANG, p.ParsePrefixExpression)
 	p.registerPrefix(token.MINUS, p.ParsePrefixExpression)
+	p.registerPrefix(token.LPAREN, p.ParseGroupedExpression)
 
 	p.NextToken()
 	p.NextToken()
@@ -241,6 +242,15 @@ func (p *Parser) ParseBoolean() ast.Expression {
 	}
 	boolean.Value = value
 	return boolean
+}
+
+func (p *Parser) ParseGroupedExpression() ast.Expression {
+	p.NextToken()
+	exp := p.ParseExpression(LOWEST)
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+	return exp
 }
 
 func (p *Parser) parseIdentifier() ast.Expression {
