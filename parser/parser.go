@@ -8,6 +8,12 @@ import (
 	"strconv"
 )
 
+// / parsing functions
+type (
+	prefixParseFn func() ast.Expression
+	infixParseFn  func(expression ast.Expression) ast.Expression
+)
+
 const (
 	_ int = iota
 	LOWEST
@@ -18,6 +24,17 @@ const (
 	PREFIX
 	CALL
 )
+
+var precedences = map[token.Type]int{
+	token.EQ:       EQUALS,
+	token.NEQ:      EQUALS,
+	token.LT:       LGT,
+	token.GT:       LGT,
+	token.PLUS:     SUM,
+	token.MINUS:    SUM,
+	token.ASTERISK: PRODUCT,
+	token.SLASH:    PRODUCT,
+}
 
 type Parser struct {
 	l *lexer.Lexer
@@ -37,8 +54,24 @@ func New(l *lexer.Lexer) *Parser {
 	p := &Parser{l: l, errors: []string{}}
 
 	p.prefixParseFns = make(map[token.Type]prefixParseFn)
+	p.infixParseFns = make(map[token.Type]infixParseFn)
+	/// infix expressions
+	p.registerInfix(token.PLUS, p.ParseInfixExpression)
+	p.registerInfix(token.MINUS, p.ParseInfixExpression)
+	p.registerInfix(token.ASTERISK, p.ParseInfixExpression)
+	p.registerInfix(token.SLASH, p.ParseInfixExpression)
+	p.registerInfix(token.EQ, p.ParseInfixExpression)
+	p.registerInfix(token.NEQ, p.ParseInfixExpression)
+	p.registerInfix(token.LT, p.ParseInfixExpression)
+	p.registerInfix(token.GT, p.ParseInfixExpression)
+
+	// identifier
 	p.registerPrefix(token.IDENT, p.parseIdentifier)
+
+	// literal
 	p.registerPrefix(token.INT, p.ParseIntegerLiteral)
+
+	// prefix expressions
 	p.registerPrefix(token.BANG, p.ParsePrefixExpression)
 	p.registerPrefix(token.MINUS, p.ParsePrefixExpression)
 
@@ -123,6 +156,7 @@ func (p *Parser) ParseReturnStatement() ast.Statement {
 
 // ParseExpressionStatement / expressions
 func (p *Parser) ParseExpressionStatement() *ast.ExpressionStatement {
+	defer UnTrace(Trace("ParseExpressionStatement"))
 	stmt := &ast.ExpressionStatement{Token: p.currToken}
 	stmt.Expression = p.ParseExpression(LOWEST)
 	if p.peekTokenIs(token.SEMICOLON) {
@@ -136,16 +170,29 @@ func (p *Parser) noPrefixParserFnError(t token.Type) {
 }
 
 func (p *Parser) ParseExpression(precedence int) ast.Expression {
+	defer UnTrace(Trace("ParseExpression"))
 	prefix := p.prefixParseFns[p.currToken.Type]
 	if prefix == nil {
 		p.noPrefixParserFnError(p.currToken.Type)
 		return nil
 	}
 	leftExp := prefix()
+	//
+	for !p.peekTokenIs(token.SEMICOLON) && precedence < p.peekPrecedence() {
+		infix := p.infixParseFns[p.peekToken.Type]
+		if infix == nil {
+			return leftExp
+		}
+		p.NextToken()
+		leftExp = infix(leftExp)
+		//
+	}
+
 	return leftExp
 }
 
 func (p *Parser) ParsePrefixExpression() ast.Expression {
+	defer UnTrace(Trace("ParsePrefixExpression"))
 	expression := &ast.PrefixExpression{
 		Token:    p.currToken,
 		Operator: p.currToken.Literal,
@@ -155,7 +202,21 @@ func (p *Parser) ParsePrefixExpression() ast.Expression {
 	return expression
 }
 
+func (p *Parser) ParseInfixExpression(left ast.Expression) ast.Expression {
+	defer UnTrace(Trace("ParseInfixExpression"))
+	expression := &ast.InfixExpression{
+		Token:    p.currToken,
+		Operator: p.currToken.Literal,
+		Left:     left,
+	}
+	precedence := p.currentPrecedence()
+	p.NextToken()
+	expression.Right = p.ParseExpression(precedence)
+	return expression
+}
+
 func (p *Parser) ParseIntegerLiteral() ast.Expression {
+	defer UnTrace(Trace("ParseIntegerLiteral"))
 	literal := &ast.IntegerLiteral{Token: p.currToken}
 
 	value, err := strconv.ParseInt(p.currToken.Literal, 0, 64)
@@ -169,6 +230,7 @@ func (p *Parser) ParseIntegerLiteral() ast.Expression {
 }
 
 func (p *Parser) parseIdentifier() ast.Expression {
+	defer UnTrace(Trace("ParseIdentifier"))
 	return &ast.Identifier{
 		Token: p.currToken, Value: p.currToken.Literal,
 	}
@@ -190,8 +252,16 @@ func (p *Parser) expectPeek(t token.Type) bool {
 	return false
 }
 
-// / parsing functions
-type (
-	prefixParseFn func() ast.Expression
-	infixParseFn  func(expression ast.Expression) ast.Expression
-)
+func (p *Parser) peekPrecedence() int {
+	if precedence, ok := precedences[p.peekToken.Type]; ok {
+		return precedence
+	}
+	return LOWEST
+}
+
+func (p *Parser) currentPrecedence() int {
+	if precedence, ok := precedences[p.currToken.Type]; ok {
+		return precedence
+	}
+	return LOWEST
+}
