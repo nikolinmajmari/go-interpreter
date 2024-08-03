@@ -70,6 +70,8 @@ func New(l *lexer.Lexer) *Parser {
 
 	// literal
 	p.registerPrefix(token.INT, p.ParseIntegerLiteral)
+	p.registerPrefix(token.TRUE, p.ParseBoolean)
+	p.registerPrefix(token.FALSE, p.ParseBoolean)
 
 	// prefix expressions
 	p.registerPrefix(token.BANG, p.ParsePrefixExpression)
@@ -156,7 +158,7 @@ func (p *Parser) ParseReturnStatement() ast.Statement {
 
 // ParseExpressionStatement / expressions
 func (p *Parser) ParseExpressionStatement() *ast.ExpressionStatement {
-	defer UnTrace(Trace("ParseExpressionStatement"))
+	//defer UnTrace(Trace("ParseExpressionStatement"))
 	stmt := &ast.ExpressionStatement{Token: p.currToken}
 	stmt.Expression = p.ParseExpression(LOWEST)
 	if p.peekTokenIs(token.SEMICOLON) {
@@ -170,7 +172,7 @@ func (p *Parser) noPrefixParserFnError(t token.Type) {
 }
 
 func (p *Parser) ParseExpression(precedence int) ast.Expression {
-	defer UnTrace(Trace("ParseExpression"))
+	//defer UnTrace(Trace("ParseExpression"))
 	prefix := p.prefixParseFns[p.currToken.Type]
 	if prefix == nil {
 		p.noPrefixParserFnError(p.currToken.Type)
@@ -192,7 +194,7 @@ func (p *Parser) ParseExpression(precedence int) ast.Expression {
 }
 
 func (p *Parser) ParsePrefixExpression() ast.Expression {
-	defer UnTrace(Trace("ParsePrefixExpression"))
+	//defer UnTrace(Trace("ParsePrefixExpression"))
 	expression := &ast.PrefixExpression{
 		Token:    p.currToken,
 		Operator: p.currToken.Literal,
@@ -203,7 +205,7 @@ func (p *Parser) ParsePrefixExpression() ast.Expression {
 }
 
 func (p *Parser) ParseInfixExpression(left ast.Expression) ast.Expression {
-	defer UnTrace(Trace("ParseInfixExpression"))
+	//defer UnTrace(Trace("ParseInfixExpression"))
 	expression := &ast.InfixExpression{
 		Token:    p.currToken,
 		Operator: p.currToken.Literal,
@@ -216,7 +218,7 @@ func (p *Parser) ParseInfixExpression(left ast.Expression) ast.Expression {
 }
 
 func (p *Parser) ParseIntegerLiteral() ast.Expression {
-	defer UnTrace(Trace("ParseIntegerLiteral"))
+	//defer UnTrace(Trace("ParseIntegerLiteral"))
 	literal := &ast.IntegerLiteral{Token: p.currToken}
 
 	value, err := strconv.ParseInt(p.currToken.Literal, 0, 64)
@@ -229,8 +231,20 @@ func (p *Parser) ParseIntegerLiteral() ast.Expression {
 	return literal
 }
 
+func (p *Parser) ParseBoolean() ast.Expression {
+	boolean := &ast.Boolean{Token: p.currToken}
+	value, err := strconv.ParseBool(p.currToken.Literal)
+	if nil != err {
+		msg := fmt.Sprintf("Could not parse %q as boolean", p.currToken.Literal)
+		p.errors = append(p.errors, msg)
+		return nil
+	}
+	boolean.Value = value
+	return boolean
+}
+
 func (p *Parser) parseIdentifier() ast.Expression {
-	defer UnTrace(Trace("ParseIdentifier"))
+	//defer UnTrace(Trace("ParseIdentifier"))
 	return &ast.Identifier{
 		Token: p.currToken, Value: p.currToken.Literal,
 	}

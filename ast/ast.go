@@ -31,7 +31,6 @@ func (p *Program) String() string {
 	}
 	return out.String()
 }
-
 func (p *Program) TokenLiteral() string {
 	if len(p.Statements) > 0 {
 
@@ -61,6 +60,15 @@ type IntegerLiteral struct {
 func (il IntegerLiteral) expressionNode()      {}
 func (il IntegerLiteral) TokenLiteral() string { return il.Token.Literal }
 func (il IntegerLiteral) String() string       { return il.Token.Literal }
+
+type Boolean struct {
+	Token token.Token
+	Value bool
+}
+
+func (b *Boolean) expressionNode()      {}
+func (b *Boolean) TokenLiteral() string { return b.Token.Literal }
+func (b *Boolean) String() string       { return b.Token.Literal }
 
 type PrefixExpression struct {
 	Token    token.Token
@@ -98,7 +106,6 @@ func (ie InfixExpression) String() string {
 	return out.String()
 }
 
-// / statements
 type LetStatement struct {
 	Token token.Token
 	Name  *Identifier
@@ -116,7 +123,6 @@ func (ls *LetStatement) String() string {
 	out.WriteString(";")
 	return out.String()
 }
-
 func (ls *LetStatement) TokenLiteral() string {
 	return ls.Token.Literal
 }
@@ -136,11 +142,9 @@ func (rs *ReturnStatement) String() string {
 	out.WriteString(";")
 	return out.String()
 }
-
 func (rs *ReturnStatement) TokenLiteral() string {
 	return rs.Token.Literal
 }
-
 func (rs *ReturnStatement) statementNode() {}
 
 type ExpressionStatement struct {
@@ -154,7 +158,6 @@ func (es *ExpressionStatement) String() string {
 	}
 	return ""
 }
-
 func (es *ExpressionStatement) TokenLiteral() string {
 	return es.Token.Literal
 }
