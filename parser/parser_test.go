@@ -311,6 +311,71 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 	}
 }
 
+func TestIfExpression(t *testing.T) {
+	input := `if (a > b) { a; }`
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+	assertProgramLength(t, program, 1)
+	stmt := assertExpressionStatement(t, program.Statements[0])
+
+	ifExp, ok := stmt.Expression.(*ast.IfExpression)
+	if !ok {
+		t.Fatalf("Expected expression of type *ast.IfExpression got %T instead", stmt.Expression)
+	}
+	if !testInfixExpression(t, ifExp.Condition, "a", ">", "b") {
+		return
+	}
+	if len(ifExp.Consequence.Statements) != 1 {
+		t.Errorf("Expected 1 statement on consequence, got %d instead", len(ifExp.Consequence.Statements))
+	}
+	consequence, ok := ifExp.Consequence.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("Statement[0] from consequence is not an *ast.ExpressionStatement got %T instead",
+			ifExp.Consequence.Statements[0])
+	}
+	if !testIdentifier(t, consequence.Expression, "a") {
+		return
+	}
+	if ifExp.Alternative != nil {
+		t.Fatalf("Expected nil alternative got %v", ifExp.Alternative)
+	}
+}
+func TestIfElseExpression(t *testing.T) {
+	input := `if (a<b) {a;} else {b;}`
+	l := lexer.New(input)
+	parser := New(l)
+	program := parser.ParseProgram()
+	checkParserErrors(t, parser)
+	assertProgramLength(t, program, 1)
+	stmt := assertExpressionStatement(t, program.Statements[0])
+	exp, ok := stmt.Expression.(*ast.IfExpression)
+	if !ok {
+		t.Fatalf("Expected expression to be of type *ast.IfExpression got %T instead", stmt.Expression)
+	}
+	if !testInfixExpression(t, exp.Condition, "a", "<", "b") {
+		return
+	}
+	if len(exp.Consequence.Statements) != 1 {
+		t.Errorf("Expected 1 statement as consequence, got %d", len(exp.Consequence.Statements))
+	}
+	if exp.Alternative == nil {
+		t.Fatalf("Expected alternative on statement")
+	}
+	if len(exp.Alternative.Statements) != 1 {
+		t.Fatalf("Expected 1 alternative statement, got %d", len(exp.Alternative.Statements))
+	}
+	consequence := assertExpressionStatement(t, exp.Consequence.Statements[0])
+	if !testIdentifier(t, consequence.Expression, "a") {
+		return
+	}
+	alternative := assertExpressionStatement(t, exp.Alternative.Statements[0])
+	if !testIdentifier(t, alternative.Expression, "b") {
+		return
+	}
+}
+
 func testInfixExpression(
 	t *testing.T,
 	expression ast.Expression,

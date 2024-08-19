@@ -77,6 +77,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.BANG, p.ParsePrefixExpression)
 	p.registerPrefix(token.MINUS, p.ParsePrefixExpression)
 	p.registerPrefix(token.LPAREN, p.ParseGroupedExpression)
+	p.registerPrefix(token.IF, p.parseIfExpression)
 
 	p.NextToken()
 	p.NextToken()
@@ -258,6 +259,43 @@ func (p *Parser) parseIdentifier() ast.Expression {
 	return &ast.Identifier{
 		Token: p.currToken, Value: p.currToken.Literal,
 	}
+}
+
+func (p *Parser) parseIfExpression() ast.Expression {
+	exp := &ast.IfExpression{Token: p.currToken}
+	if !p.expectPeek(token.LPAREN) {
+		return nil
+	}
+	p.NextToken()
+	exp.Condition = p.ParseExpression(LOWEST)
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+	if !p.expectPeek(token.LBRACKET) {
+		return nil
+	}
+	exp.Consequence = p.ParseBlockStatement()
+	if p.peekTokenIs(token.ELSE) {
+		p.NextToken()
+		if !p.expectPeek(token.LBRACKET) {
+			return nil
+		}
+		exp.Alternative = p.ParseBlockStatement()
+	}
+	return exp
+}
+
+func (p *Parser) ParseBlockStatement() *ast.BlockStatement {
+	block := &ast.BlockStatement{Token: p.currToken, Statements: []ast.Statement{}}
+	p.NextToken()
+	for !p.currentTokenIs(token.EOF) && !p.currentTokenIs(token.RBRACKET) {
+		stm := p.ParseStatement()
+		if stm != nil {
+			block.Statements = append(block.Statements, stm)
+		}
+		p.NextToken()
+	}
+	return block
 }
 
 // / helpers
