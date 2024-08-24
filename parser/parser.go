@@ -78,6 +78,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.MINUS, p.ParsePrefixExpression)
 	p.registerPrefix(token.LPAREN, p.ParseGroupedExpression)
 	p.registerPrefix(token.IF, p.parseIfExpression)
+	p.registerPrefix(token.FUNCTION, p.ParseFunctionLiteral)
 
 	p.NextToken()
 	p.NextToken()
@@ -296,6 +297,52 @@ func (p *Parser) ParseBlockStatement() *ast.BlockStatement {
 		p.NextToken()
 	}
 	return block
+}
+
+func (p *Parser) ParseFunctionLiteral() ast.Expression {
+	lit := &ast.FunctionLiteral{
+		Token: p.currToken,
+	}
+	if !p.expectPeek(token.LPAREN) {
+		return nil
+	}
+	lit.Parameters = p.ParseParameters()
+
+	if !p.expectPeek(token.LBRACKET) {
+		return nil
+	}
+	lit.Body = p.ParseBlockStatement()
+	fmt.Printf("%v", lit)
+	return lit
+}
+
+func (p *Parser) ParseParameters() []*ast.Identifier {
+	var params []*ast.Identifier
+	if p.peekTokenIs(token.RPAREN) {
+		p.NextToken()
+		return params
+	}
+	p.NextToken()
+	param := &ast.Identifier{
+		Token: p.currToken,
+		Value: p.currToken.Literal,
+	}
+	params = append(params, param)
+
+	for p.peekTokenIs(token.COMMA) {
+		p.NextToken()
+		p.NextToken()
+		param := &ast.Identifier{
+			Token: p.currToken,
+			Value: p.currToken.Literal,
+		}
+		params = append(params, param)
+	}
+
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+	return params
 }
 
 // / helpers

@@ -465,6 +465,66 @@ func testBooleanLiteral(t *testing.T, exp ast.Expression, value bool) bool {
 	return true
 }
 
+func TestFunctionLiteral(t *testing.T) {
+	input := `fn(a, b){ a + b }`
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+	assertProgramLength(t, program, 1)
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("Expected program statement to be *ast.ExpressionStatement got %T instead", program.Statements[0])
+	}
+	function, ok := stmt.Expression.(*ast.FunctionLiteral)
+	if !ok {
+		t.Fatalf("Expected expression to be *ast.FunctionLiteral got %T instead", stmt.Expression)
+	}
+	if len(function.Parameters) != 2 {
+		t.Fatalf("Expected function to have 2 parameters, got %d parameters instead", len(function.Parameters))
+	}
+	testLiteralExpression(t, function.Parameters[0], "a")
+	testLiteralExpression(t, function.Parameters[1], "b")
+	if len(function.Body.Statements) != 1 {
+		t.Fatalf("Expected 1 statement in function body got %d instead", len(function.Body.Statements))
+	}
+	bodyStmt, ok := function.Body.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("Expected body statement to be *ast.ExpressionStatement, got %T instead", function.Body.Statements[0])
+	}
+	testInfixExpression(t, bodyStmt.Expression, "a", "+", "b")
+	return
+}
+
+func TestFunctionParameterParsing(t *testing.T) {
+	tests := []struct {
+		input          string
+		expectedParams []string
+	}{
+		{input: "fn() {};", expectedParams: []string{}},
+		{input: "fn(a) {};", expectedParams: []string{"a"}},
+		{input: "fn(a, b, c) {};", expectedParams: []string{"a", "b", "c"}},
+	}
+	for _, test := range tests {
+		l := lexer.New(test.input)
+		p := New(l)
+		program := p.ParseProgram()
+		checkParserErrors(t, p)
+		assertProgramLength(t, program, 1)
+		stm, ok := program.Statements[0].(*ast.ExpressionStatement)
+		function, ok := stm.Expression.(*ast.FunctionLiteral)
+		if !ok {
+			t.Fatalf("Expected expression to be of type Function go %T instead", stm.Expression)
+		}
+		if len(function.Parameters) != len(test.expectedParams) {
+			t.Fatalf("Expected %d params, got %d instead", len(test.expectedParams), len(function.Parameters))
+		}
+		for i, literal := range test.expectedParams {
+			testLiteralExpression(t, function.Parameters[i], literal)
+		}
+	}
+}
+
 func testLetStatement(t *testing.T, stm ast.Statement, name string) bool {
 	if stm.TokenLiteral() != "let" {
 		t.Errorf("Expected let token literal got %s", stm.TokenLiteral())
