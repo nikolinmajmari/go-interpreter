@@ -8,60 +8,50 @@ import (
 )
 
 func TestLetStatements(t *testing.T) {
-	input := `
-		let a = 0;
-		let b = 1;
-		let c = 2;
-`
-	l := lexer.New(input)
-	p := New(l)
-
-	program := p.ParseProgram()
-	checkParserErrors(t, p)
-	if program == nil {
-		t.Fatal("ParseProgram returned nil !")
-	}
-	if len(program.Statements) != 3 {
-		t.Fatalf("Expected 3 statements, ParseProgram() returned  %d! ", len(program.Statements))
-	}
 
 	tests := []struct {
-		expectedIdentifier string
+		input string
+		ident string
+		value interface{}
 	}{
-		{"a"}, {"b"}, {"c"},
+		{"let a = 0;", "a", 0},
+		{"let b = true;", "b", true},
+		{"let c = x;", "c", "x"},
 	}
-	for i, tt := range tests {
-		stm := program.Statements[i]
-		if !testLetStatement(t, stm, tt.expectedIdentifier) {
+
+	for _, test := range tests {
+		l := lexer.New(test.input)
+		p := New(l)
+		prog := p.ParseProgram()
+		checkParserErrors(t, p)
+		assertProgramLength(t, prog, 1)
+
+		if !testLetStatement(t, prog.Statements[0], test.ident) {
+			return
+		}
+		value := prog.Statements[0].(*ast.LetStatement).Value
+		if !testLiteralExpression(t, value, test.value) {
 			return
 		}
 	}
 }
 
 func TestReturnStatements(t *testing.T) {
-	input := `
-	return 123;
-	return a;
-	return b;
-`
-	l := lexer.New(input)
-	p := New(l)
-
-	program := p.ParseProgram()
-	checkParserErrors(t, p)
-
-	if len(program.Statements) != 3 {
-		t.Errorf("Expected %d statements, got %d", 3, len(program.Statements))
+	tests := []struct {
+		input  string
+		expect interface{}
+	}{
+		{"return 123;", 123},
+		{"return true;", true},
+		{"return a;", "a"},
 	}
 
-	for _, stm := range program.Statements {
-		rStm, ok := stm.(*ast.ReturnStatement)
-		if !ok {
-			t.Errorf("statement is not an ast.ReturnStatement, got %T", rStm)
-		}
-		if rStm.TokenLiteral() != "return" {
-			t.Errorf("Expected %q token literal, got %q", "return", rStm.TokenLiteral())
-		}
+	for _, test := range tests {
+		p := New(lexer.New(test.input))
+		prog := p.ParseProgram()
+		checkParserErrors(t, p)
+		assertProgramLength(t, prog, 1)
+		testReturnStatement(t, prog.Statements[0], test.expect)
 	}
 }
 
@@ -188,9 +178,9 @@ func TestParsingInfixExpressions(t *testing.T) {
 		{"5<5;", 5, "<", 5},
 		{"5==5;", 5, "==", 5},
 		{"5!=5;", 5, "!=", 5},
-		{"true == true", true, "==", true},
-		{"true != false", true, "!=", false},
-		{"false == false", false, "==", false},
+		{"true == true;", true, "==", true},
+		{"true != false;", true, "!=", false},
+		{"false == false;", false, "==", false},
 	}
 
 	for _, tt := range infixTests {
@@ -216,85 +206,85 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 		expected string
 	}{
 		{
-			"-a * b",
+			"-a * b;",
 			"((-a) * b)",
 		},
 		{
-			"!-a",
+			"!-a;",
 			"(!(-a))",
 		},
 		{
-			"a + b + c",
+			"a + b + c;",
 			"((a + b) + c)",
 		},
 		{
-			"a + b - c",
+			"a + b - c;",
 			"((a + b) - c)",
 		},
 		{
-			"a * b * c",
+			"a * b * c;",
 			"((a * b) * c)",
 		},
 		{
-			"a * b / c",
+			"a * b / c;",
 			"((a * b) / c)",
 		},
 		{
-			"a + b / c",
+			"a + b / c;",
 			"(a + (b / c))",
 		},
 		{
-			"a + b * c + d / e - f",
+			"a + b * c + d / e - f;",
 			"(((a + (b * c)) + (d / e)) - f)",
 		},
 		{
-			"3 + 4; -5 * 5",
+			"3 + 4; -5 * 5;",
 			"(3 + 4)((-5) * 5)",
 		},
 		{
-			"5 > 4 == 3 < 4",
+			"5 > 4 == 3 < 4;",
 			"((5 > 4) == (3 < 4))",
 		},
 		{
-			"5 < 4 != 3 > 4",
+			"5 < 4 != 3 > 4;",
 			"((5 < 4) != (3 > 4))",
 		},
 		{
-			"3 + 4 * 5 == 3 * 1 + 4 * 5",
+			"3 + 4 * 5 == 3 * 1 + 4 * 5;",
 			"((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
 		},
 		{
-			"3 + 4 * 5 == 3 * 1 + 4 * 5",
+			"3 + 4 * 5 == 3 * 1 + 4 * 5;",
 			"((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
 		},
 		{
-			"true", "true",
+			"true;", "true",
 		},
 		{
-			"false", "false",
+			"false;", "false",
 		},
 		{
-			"true == false",
+			"true == false;",
 			"(true == false)",
 		},
 		{
-			"1 > 2 == true",
+			"1 > 2 == true;",
 			"((1 > 2) == true)",
 		},
 		{
-			"1 + (2 + 3) + 4",
+			"1 + (2 + 3) + 4;",
 			"((1 + (2 + 3)) + 4)",
 		},
 		{
-			"(1 + 2) * 3",
+			"(1 + 2) * 3;",
 			"((1 + 2) * 3)",
 		},
 		{
-			"-2/(1 + 2)",
+			"-2/(1 + 2);",
 			"((-2) / (1 + 2))",
 		},
 		{
-			"!( true == false )",
+			"!( true == false );",
 			"(!(true == false))",
 		},
 	}
@@ -312,7 +302,7 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 }
 
 func TestIfExpression(t *testing.T) {
-	input := `if (a > b) { a; }`
+	input := `if (a > b) { a; };`
 	l := lexer.New(input)
 	p := New(l)
 	program := p.ParseProgram()
@@ -343,7 +333,7 @@ func TestIfExpression(t *testing.T) {
 	}
 }
 func TestIfElseExpression(t *testing.T) {
-	input := `if (a<b) {a;} else {b;}`
+	input := `if (a<b) {a;} else {b;};`
 	l := lexer.New(input)
 	parser := New(l)
 	program := parser.ParseProgram()
@@ -466,7 +456,7 @@ func testBooleanLiteral(t *testing.T, exp ast.Expression, value bool) bool {
 }
 
 func TestFunctionLiteral(t *testing.T) {
-	input := `fn(a, b){ a + b }`
+	input := `fn(a, b){ a + b; };`
 	l := lexer.New(input)
 	p := New(l)
 	program := p.ParseProgram()
@@ -546,7 +536,24 @@ func testLetStatement(t *testing.T, stm ast.Statement, name string) bool {
 	return true
 }
 
+func testReturnStatement(t *testing.T, stm ast.Statement, value interface{}) bool {
+	t.Helper()
+	if stm.TokenLiteral() != "return" {
+		t.Errorf("Expected return token literal got %s", stm.TokenLiteral())
+		return false
+	}
+	rstmt, ok := stm.(*ast.ReturnStatement)
+	if !ok {
+		t.Errorf("Expected (*ast.ReturnStatement) got %T instead", stm)
+	}
+	if !testLiteralExpression(t, rstmt.ReturnValue, value) {
+		return false
+	}
+	return true
+}
+
 func checkParserErrors(t *testing.T, p *Parser) {
+	t.Helper()
 	errors := p.Errors()
 	if len(errors) == 0 {
 		return

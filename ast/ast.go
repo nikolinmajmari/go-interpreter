@@ -222,3 +222,9 @@ func (b *BlockStatement) String() string {
 	}
 	return out.String()
 }
+
+type CallExpression struct {
+	Token     token.Token
+	Function  Expression
+	Arguments []Expression
+}

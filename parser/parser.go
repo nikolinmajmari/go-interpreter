@@ -143,8 +143,10 @@ func (p *Parser) ParseLetStatement() *ast.LetStatement {
 	if !p.expectPeek(token.ASSIGN) {
 		return nil
 	}
-	for !p.currentTokenIs(token.SEMICOLON) {
-		p.NextToken()
+	p.NextToken()
+	stm.Value = p.ParseExpression(LOWEST)
+	if !p.expectPeek(token.SEMICOLON) {
+		return nil
 	}
 	return stm
 }
@@ -153,8 +155,9 @@ func (p *Parser) ParseReturnStatement() ast.Statement {
 	stm := &ast.ReturnStatement{Token: p.currToken}
 	p.NextToken()
 	/// skip expression
-	for !p.currentTokenIs(token.SEMICOLON) {
-		p.NextToken()
+	stm.ReturnValue = p.ParseExpression(LOWEST)
+	if !p.expectPeek(token.SEMICOLON) {
+		return nil
 	}
 	return stm
 }
@@ -164,8 +167,8 @@ func (p *Parser) ParseExpressionStatement() *ast.ExpressionStatement {
 	//defer UnTrace(Trace("ParseExpressionStatement"))
 	stmt := &ast.ExpressionStatement{Token: p.currToken}
 	stmt.Expression = p.ParseExpression(LOWEST)
-	if p.peekTokenIs(token.SEMICOLON) {
-		p.NextToken()
+	if !p.expectPeek(token.SEMICOLON) {
+		return nil
 	}
 	return stmt
 }
