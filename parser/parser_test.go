@@ -385,6 +385,34 @@ func TestForStatement(t *testing.T) {
 	testInfixExpression(t, exprStmt.Expression, "i", "+", 1)
 }
 
+func TestAssignmentStatements(t *testing.T) {
+	tests := []struct {
+		input      string
+		ident      string
+		expression string
+	}{
+		{"a=1+a;", "a", "(1 + a)"},
+		{"b=true;", "b", "true"},
+		{"c=1*a+b;", "c", "((1 * a) + b)"},
+	}
+	for _, test := range tests {
+		p := New(lexer.New(test.input))
+		program := p.ParseProgram()
+		checkParserErrors(t, p)
+		assertProgramLength(t, program, 1)
+		stmt, ok := program.Statements[0].(*ast.AssignmentStatement)
+		if !ok {
+			t.Fatalf("Expected *ast.AssignmentStatement got %T instead", program.Statements[0])
+		}
+		if stmt.Ident.Value != test.ident {
+			t.Fatalf("Expected ident %q got %q instead", test.ident, stmt.Ident.Value)
+		}
+		if stmt.Value.String() != test.expression {
+			t.Fatalf("Expected expression %q assigned, got %q instead", test.expression, stmt.Value.String())
+		}
+	}
+}
+
 func testInfixExpression(
 	t *testing.T,
 	expression ast.Expression,

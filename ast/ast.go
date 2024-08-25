@@ -246,3 +246,17 @@ func (f *ForStatement) String() string {
 	out.WriteString("}")
 	return out.String()
 }
+
+type AssignmentStatement struct {
+	Token token.Token
+	Ident *Identifier
+	Value Expression
+}
+
+func (a *AssignmentStatement) statementNode()       {}
+func (a *AssignmentStatement) TokenLiteral() string { return a.Token.Literal }
+func (a *AssignmentStatement) String() string {
+	var out bytes.Buffer
+	out.WriteString(a.Ident.Value + " = " + a.Value.String())
+	return out.String()
+}
