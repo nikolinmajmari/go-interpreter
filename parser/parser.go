@@ -126,6 +126,8 @@ func (p *Parser) ParseStatement() ast.Statement {
 		return p.ParseLetStatement()
 	case token.RETURN:
 		return p.ParseReturnStatement()
+	case token.FOR:
+		return p.ParseForStatement()
 	default:
 		return p.ParseExpressionStatement()
 	}
@@ -346,6 +348,26 @@ func (p *Parser) ParseParameters() []*ast.Identifier {
 		return nil
 	}
 	return params
+}
+
+func (p *Parser) ParseForStatement() *ast.ForStatement {
+	stmt := &ast.ForStatement{
+		Token: p.currToken,
+	}
+	if !p.expectPeek(token.LPAREN) {
+		return nil
+	}
+	p.NextToken()
+	stmt.Condition = p.ParseExpression(LOWEST)
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+	if !p.expectPeek(token.LBRACKET) {
+		return nil
+	}
+	stmt.Block = p.ParseBlockStatement()
+	p.NextToken()
+	return stmt
 }
 
 // / helpers

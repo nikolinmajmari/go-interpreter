@@ -366,6 +366,25 @@ func TestIfElseExpression(t *testing.T) {
 	}
 }
 
+func TestForStatement(t *testing.T) {
+	input := "for(i>20){ i + 1;}"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+	assertProgramLength(t, program, 1)
+	forStmt, ok := program.Statements[0].(*ast.ForStatement)
+	if !ok {
+		t.Fatalf("Expected (*ast.ForStatement) got %T instead", program.Statements[0])
+	}
+	testInfixExpression(t, forStmt.Condition, "i", ">", 20)
+	if len(forStmt.Block.Statements) != 1 {
+		t.Fatalf("Expected 1 statement in block, got %d instead", len(forStmt.Block.Statements))
+	}
+	exprStmt := assertExpressionStatement(t, forStmt.Block.Statements[0])
+	testInfixExpression(t, exprStmt.Expression, "i", "+", 1)
+}
+
 func testInfixExpression(
 	t *testing.T,
 	expression ast.Expression,

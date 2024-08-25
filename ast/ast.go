@@ -228,3 +228,21 @@ type CallExpression struct {
 	Function  Expression
 	Arguments []Expression
 }
+
+type ForStatement struct {
+	Token     token.Token
+	Condition Expression
+	Block     *BlockStatement
+}
+
+func (f *ForStatement) statementNode()       {}
+func (f *ForStatement) TokenLiteral() string { return f.Token.Literal }
+func (f *ForStatement) String() string {
+	var out bytes.Buffer
+	out.WriteString("for ")
+	out.WriteString("( " + f.Condition.String() + ")")
+	out.WriteString("{\n")
+	out.WriteString(f.Block.String())
+	out.WriteString("}")
+	return out.String()
+}
