@@ -20,7 +20,7 @@ const (
 	GT       = ">"
 	EQ       = "=="
 	NEQ      = "!="
-	// delimiters
+	// COMMA delimiters
 	COMMA     = ","
 	SEMICOLON = ";"
 

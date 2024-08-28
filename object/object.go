@@ -1,33 +1,46 @@
 package object
 
 import (
-	"go/types"
-	"interpreter/ast"
+	"fmt"
 )
 
-const FUNCTION_OBJ = "FUNCTION"
+const (
+	INTEGER_OBJ = "INTEGER"
+	BOOLEAN_OBJ = "BOOLEAN"
+	NULL_OBJ    = "NULL"
+)
 
-func NewEnvironment() *Environment {
-	s := make(map[string]types.Object)
-	return &Environment{store: s}
+type ObjectType string
+
+type Object interface {
+	Type() ObjectType
+	Inspect() string
 }
 
-type Environment struct {
-	store map[string]types.Object
+type Integer struct {
+	Value int64
 }
 
-func (e *Environment) Get(key string) (types.Object, bool) {
-	obj, ok := e.store[key]
-	return obj, ok
+func (i *Integer) Type() ObjectType { return INTEGER_OBJ }
+func (i *Integer) Inspect() string  { return fmt.Sprintf("%d", i.Value) }
+
+type Boolean struct {
+	Value bool
 }
 
-func (e *Environment) Set(key string, value types.Object) types.Object {
-	e.store[key] = value
-	return value
+func (b *Boolean) Type() ObjectType {
+	return BOOLEAN_OBJ
+}
+func (b *Boolean) Inspect() string {
+	return fmt.Sprintf("%t", b.Value)
 }
 
-type Function struct {
-	Parameters  []*ast.Identifier
-	Body        *ast.BlockStatement
-	Environment Environment
+type Null struct {
+}
+
+func (n *Null) Type() ObjectType {
+	return NULL_OBJ
+}
+func (n *Null) Inspect() string {
+	return "null"
 }
