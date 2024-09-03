@@ -101,6 +101,11 @@ func (p *Parser) PeekError(t token.Type) {
 	p.errors = append(p.errors, msg)
 }
 
+func (p *Parser) PeeksError(t []token.Type) {
+	msg := fmt.Sprintf("Expected token type to be from (%v) got %q instead", t, p.peekToken.Type)
+	p.errors = append(p.errors, msg)
+}
+
 func (p *Parser) NextToken() {
 	p.currToken = p.peekToken
 	p.peekToken = p.l.NextToken()
@@ -150,7 +155,7 @@ func (p *Parser) ParseLetStatement() *ast.LetStatement {
 	}
 	p.NextToken()
 	stm.Value = p.ParseExpression(LOWEST)
-	if !p.expectPeek(token.SEMICOLON) {
+	if !p.expectPeeks([]token.Type{token.SEMICOLON, token.EOF}) {
 		return nil
 	}
 	return stm
@@ -161,7 +166,7 @@ func (p *Parser) ParseReturnStatement() ast.Statement {
 	p.NextToken()
 	/// skip expression
 	stm.ReturnValue = p.ParseExpression(LOWEST)
-	if !p.expectPeek(token.SEMICOLON) {
+	if !p.expectPeeks([]token.Type{token.SEMICOLON, token.EOF}) {
 		return nil
 	}
 	return stm
@@ -172,7 +177,7 @@ func (p *Parser) ParseExpressionStatement() *ast.ExpressionStatement {
 	//defer UnTrace(Trace("ParseExpressionStatement"))
 	stmt := &ast.ExpressionStatement{Token: p.currToken}
 	stmt.Expression = p.ParseExpression(LOWEST)
-	if !p.expectPeek(token.SEMICOLON) {
+	if !p.expectPeeks([]token.Type{token.SEMICOLON, token.EOF}) {
 		return nil
 	}
 	return stmt
@@ -191,7 +196,7 @@ func (p *Parser) ParseExpression(precedence int) ast.Expression {
 	}
 	leftExp := prefix()
 	//
-	for !p.peekTokenIs(token.SEMICOLON) && precedence < p.peekPrecedence() {
+	for !(p.peekTokenIs(token.SEMICOLON) || p.peekTokenIs(token.EOF)) && precedence < p.peekPrecedence() {
 		infix := p.infixParseFns[p.peekToken.Type]
 		if infix == nil {
 			return leftExp
@@ -383,7 +388,7 @@ func (p *Parser) ParseAssignmentStatement() *ast.AssignmentStatement {
 	}
 	p.NextToken()
 	assignment.Value = p.ParseExpression(LOWEST)
-	if !p.expectPeek(";") {
+	if !p.expectPeeks([]token.Type{token.SEMICOLON, token.EOF}) {
 		return nil
 	}
 	return assignment
@@ -402,6 +407,17 @@ func (p *Parser) expectPeek(t token.Type) bool {
 		return true
 	}
 	p.PeekError(t)
+	return false
+}
+
+func (p *Parser) expectPeeks(types []token.Type) bool {
+	for _, t := range types {
+		if p.peekTokenIs(t) {
+			p.NextToken()
+			return true
+		}
+	}
+	p.PeeksError(types)
 	return false
 }
 

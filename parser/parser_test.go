@@ -170,7 +170,7 @@ func TestParsingInfixExpressions(t *testing.T) {
 		operator   string
 		rightValue interface{}
 	}{
-		{"5+5;", 5, "+", 5},
+		{"5+5", 5, "+", 5},
 		{"5-5;", 5, "-", 5},
 		{"5*5;", 5, "*", 5},
 		{"5/5;", 5, "/", 5},
