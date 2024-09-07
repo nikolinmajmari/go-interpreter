@@ -27,7 +27,7 @@ func TestEvalIntegerExpression(t *testing.T) {
 func testIntegerObject(t *testing.T, obj object.Object, expected int64) bool {
 	result, ok := obj.(*object.Integer)
 	if !ok {
-		t.Errorf("Expected object of *object.Integer type got %T instead", obj)
+		t.Errorf("Expected object of *object.Integer type got = %T (%v)", obj, obj)
 		return false
 	}
 	if result.Value != expected {
@@ -82,6 +82,24 @@ func TestBangOperator(t *testing.T) {
 	for _, test := range tests {
 		evaluated := testEval(test.input)
 		testBooleanObject(t, evaluated, test.expected)
+	}
+}
+
+func TestEvalIngerExpression(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int64
+	}{
+		{"-1", -1},
+		{"1", 1},
+		{"-10", -10},
+	}
+	for _, test := range tests {
+		evaluated := testEval(test.input)
+		if evaluated == nil {
+			t.Fatalf("Input %q evaluated as nil", test.input)
+		}
+		testIntegerObject(t, evaluated, test.expected)
 	}
 }
 
