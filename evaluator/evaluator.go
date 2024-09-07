@@ -35,49 +35,26 @@ func Eval(node ast.Node) object.Object {
 }
 
 func evalInfixExpression(left object.Object, operator string, right object.Object) object.Object {
-	l, rok := left.(*object.Integer)
-	if !rok {
-		return nil
+	if left.Type() == object.INTEGER_OBJ && right.Type() == object.INTEGER_OBJ {
+		l := left.(*object.Integer)
+		r := right.(*object.Integer)
+		return evalIntegerInfixExpression(l, operator, r)
 	}
-	r, lok := right.(*object.Integer)
-	if !lok {
-		return nil
-	}
+	return nil
+}
+
+func evalIntegerInfixExpression(l *object.Integer, operator string, r *object.Integer) *object.Integer {
 	switch operator {
 	case "+":
-		return evalPlusOperatorInfixExpression(l, r)
+		return &object.Integer{Value: l.Value + r.Value}
 	case "-":
-		return evalMinusOperatorInfixExpression(l, r)
+		return &object.Integer{Value: l.Value - r.Value}
 	case "*":
-		return evalMultiplyOperatorInfixExpression(l, r)
+		return &object.Integer{Value: l.Value * r.Value}
 	case "/":
-		return evalDivisionOperatorInfixExpression(l, r)
+		return &object.Integer{Value: l.Value / r.Value}
 	default:
 		return nil
-	}
-}
-
-func evalDivisionOperatorInfixExpression(l *object.Integer, r *object.Integer) *object.Integer {
-	return &object.Integer{
-		Value: l.Value / r.Value,
-	}
-}
-
-func evalMultiplyOperatorInfixExpression(l *object.Integer, r *object.Integer) *object.Integer {
-	return &object.Integer{
-		Value: l.Value * r.Value,
-	}
-}
-
-func evalMinusOperatorInfixExpression(l *object.Integer, r *object.Integer) *object.Integer {
-	return &object.Integer{
-		Value: l.Value - r.Value,
-	}
-}
-
-func evalPlusOperatorInfixExpression(left *object.Integer, right *object.Integer) *object.Integer {
-	return &object.Integer{
-		Value: left.Value + right.Value,
 	}
 }
 
