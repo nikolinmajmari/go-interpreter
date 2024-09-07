@@ -155,7 +155,7 @@ func (p *Parser) ParseLetStatement() *ast.LetStatement {
 	}
 	p.NextToken()
 	stm.Value = p.ParseExpression(LOWEST)
-	if !p.expectPeeks([]token.Type{token.SEMICOLON, token.EOF}) {
+	if !p.expectPeeks([]token.Type{token.SEMICOLON}) {
 		return nil
 	}
 	return stm
@@ -166,7 +166,7 @@ func (p *Parser) ParseReturnStatement() ast.Statement {
 	p.NextToken()
 	/// skip expression
 	stm.ReturnValue = p.ParseExpression(LOWEST)
-	if !p.expectPeeks([]token.Type{token.SEMICOLON, token.EOF}) {
+	if !p.expectPeeks([]token.Type{token.SEMICOLON}) {
 		return nil
 	}
 	return stm
@@ -388,7 +388,7 @@ func (p *Parser) ParseAssignmentStatement() *ast.AssignmentStatement {
 	}
 	p.NextToken()
 	assignment.Value = p.ParseExpression(LOWEST)
-	if !p.expectPeeks([]token.Type{token.SEMICOLON, token.EOF}) {
+	if !p.expectPeeks([]token.Type{token.SEMICOLON}) {
 		return nil
 	}
 	return assignment
