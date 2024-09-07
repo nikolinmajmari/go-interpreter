@@ -5,6 +5,11 @@ import (
 	"interpreter/object"
 )
 
+var (
+	TRUE  = &object.Boolean{Value: true}
+	FALSE = &object.Boolean{}
+)
+
 func Eval(node ast.Node) object.Object {
 	switch node := node.(type) {
 	case *ast.Program:
@@ -16,9 +21,7 @@ func Eval(node ast.Node) object.Object {
 			Value: node.Value,
 		}
 	case *ast.Boolean:
-		return &object.Boolean{
-			Value: node.Value,
-		}
+		return boolToBooleanObject(node.Value)
 	}
 	return nil
 }
@@ -29,4 +32,11 @@ func evalStatements(stmts []ast.Statement) object.Object {
 		result = Eval(stmt)
 	}
 	return result
+}
+
+func boolToBooleanObject(value bool) *object.Boolean {
+	if value {
+		return TRUE
+	}
+	return FALSE
 }
