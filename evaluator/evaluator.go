@@ -38,24 +38,29 @@ func evalInfixExpression(left object.Object, operator string, right object.Objec
 	if left.Type() == object.INTEGER_OBJ && right.Type() == object.INTEGER_OBJ {
 		l := left.(*object.Integer)
 		r := right.(*object.Integer)
-		return evalIntegerInfixExpression(l, operator, r)
+		switch operator {
+		case "+":
+			return &object.Integer{Value: l.Value + r.Value}
+		case "-":
+			return &object.Integer{Value: l.Value - r.Value}
+		case "*":
+			return &object.Integer{Value: l.Value * r.Value}
+		case "/":
+			return &object.Integer{Value: l.Value / r.Value}
+		case ">":
+			return boolToBooleanObject(l.Value > r.Value)
+		case "<":
+			return boolToBooleanObject(l.Value < r.Value)
+		case "==":
+			return boolToBooleanObject(l.Value == r.Value)
+		case "!=":
+			return boolToBooleanObject(l.Value != r.Value)
+
+		default:
+			return nil
+		}
 	}
 	return nil
-}
-
-func evalIntegerInfixExpression(l *object.Integer, operator string, r *object.Integer) *object.Integer {
-	switch operator {
-	case "+":
-		return &object.Integer{Value: l.Value + r.Value}
-	case "-":
-		return &object.Integer{Value: l.Value - r.Value}
-	case "*":
-		return &object.Integer{Value: l.Value * r.Value}
-	case "/":
-		return &object.Integer{Value: l.Value / r.Value}
-	default:
-		return nil
-	}
 }
 
 func evalPrefixExpression(operator string, right object.Object) object.Object {
