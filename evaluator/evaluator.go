@@ -60,6 +60,12 @@ func evalInfixExpression(left object.Object, operator string, right object.Objec
 			return nil
 		}
 	}
+	switch operator {
+	case "==":
+		return boolToBooleanObject(left == right)
+	case "!=":
+		return boolToBooleanObject(left != right)
+	}
 	return nil
 }
 
