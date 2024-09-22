@@ -177,8 +177,8 @@ func (p *Parser) ParseExpressionStatement() *ast.ExpressionStatement {
 	//defer UnTrace(Trace("ParseExpressionStatement"))
 	stmt := &ast.ExpressionStatement{Token: p.currToken}
 	stmt.Expression = p.ParseExpression(LOWEST)
-	if !p.expectPeeks([]token.Type{token.SEMICOLON, token.EOF}) {
-		return nil
+	if p.peekTokenAre([]token.Type{token.SEMICOLON, token.EOF}) {
+		p.NextToken()
 	}
 	return stmt
 }
@@ -296,6 +296,9 @@ func (p *Parser) parseIfExpression() ast.Expression {
 		}
 		exp.Alternative = p.ParseBlockStatement()
 	}
+	if p.currentTokenIs(token.SEMICOLON) {
+		p.NextToken()
+	}
 	return exp
 }
 
@@ -325,7 +328,6 @@ func (p *Parser) ParseFunctionLiteral() ast.Expression {
 		return nil
 	}
 	lit.Body = p.ParseBlockStatement()
-	fmt.Printf("%v", lit)
 	return lit
 }
 
@@ -400,6 +402,14 @@ func (p *Parser) currentTokenIs(t token.Type) bool {
 }
 func (p *Parser) peekTokenIs(t token.Type) bool {
 	return p.peekToken.Type == t
+}
+func (p *Parser) peekTokenAre(types []token.Type) bool {
+	for _, t := range types {
+		if p.peekTokenIs(t) {
+			return true
+		}
+	}
+	return false
 }
 func (p *Parser) expectPeek(t token.Type) bool {
 	if p.peekTokenIs(t) {
