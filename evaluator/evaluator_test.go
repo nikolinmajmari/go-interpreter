@@ -152,6 +152,33 @@ func TestIfExpression(t *testing.T) {
 	}
 }
 
+func TestReturnStatement(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int64
+	}{
+		{"return 10+2;", 12},
+		{"return 4+2;9;", 6},
+		{"return 10*2+2;", 22},
+		{"11;return 11-5*2;10;", 1},
+		{"if(false){return 1;}return 2;", 2},
+		{`if (10 > 1) {
+					if (10 > 1) {
+						return 10;
+					}
+				return 1;
+				}`, 10},
+	}
+	for _, test := range tests {
+		eval := testEval(test.input)
+		returnValue, ok := eval.(*object.Integer)
+		if !ok {
+			t.Fatalf("Expected evaluated object of type *object.ReturnValue got %T instead", eval)
+		}
+		testIntegerObject(t, returnValue, test.expected)
+	}
+}
+
 func testNullObject(t *testing.T, obj object.Object) bool {
 	if obj != NULL {
 		t.Errorf("Object is not null, got %T (%v)", obj, obj)
